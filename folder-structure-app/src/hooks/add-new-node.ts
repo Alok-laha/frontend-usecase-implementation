@@ -1,7 +1,7 @@
 import type {FolderProps} from '../components/Folder';
 
 // hook to add new folder or file to the structure tree
-const useAddNewNode = () => {
+const useManageNodes = () => {
     function addNewNode(tree: FolderProps, newNode: {name: string, type: {type:number}}, parentId: number) {
         
         // Check if this is adding to the current element
@@ -21,7 +21,22 @@ const useAddNewNode = () => {
         }
         return tree;
     }
-    return {addNewNode};
+
+    function renameNode(tree: FolderProps, newName: string, nodeId: number) {
+        // We take the id of the node and then we check if the current id is matching
+        if(tree.id === nodeId) {
+            tree.name = newName;
+        } else {
+            if(tree.items && tree.items.length > 0)
+                tree.items.forEach(item=>renameNode(item, newName, nodeId));
+        }
+        return tree;
+    }
+
+    function deleteNode() {
+
+    }
+    return {addNewNode, renameNode, deleteNode};
 }
 
-export default useAddNewNode;
+export default useManageNodes;

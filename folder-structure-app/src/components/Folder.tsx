@@ -8,13 +8,18 @@ export type FolderProps = {
     items: FolderProps[];
 };
 
-const Folder = ({ data, updateTree }: { data: FolderProps; updateTree: (newNodeData: {name: string, type: {type:number}}, parentId: number) => void }) => {
+const Folder = ({ data, updateTree, renameTreeNode }: { data: FolderProps; updateTree: (newNodeData: {name: string, type: {type:number}}, parentId: number) => void; renameTreeNode: (newName: string, nodeId: number) => void }) => {
   const [expanded, setExpanded] = useState(false);
   const [addNewComponent, setAddNewComponent] = useState<null | {type: number}> (null);
+  const [renameComponent, setRenameComponent] = useState<null | {nodeId: number, newName: string}> (null);
 
   const showNewComponent = (type:number) => {
-    setExpanded(true);
-    setAddNewComponent({type});
+    if(type === 1 || type === 2){
+      setExpanded(true);
+      setAddNewComponent({type});
+    } else {
+      handleRename(type);
+    }
   }
 
   const handleInputBlur = () => {
@@ -29,6 +34,21 @@ const Folder = ({ data, updateTree }: { data: FolderProps; updateTree: (newNodeD
     }
   }
 
+  const handleRename = (nodeId: number) => {
+    setRenameComponent({nodeId, newName: data.name});
+  };
+
+  const handleRenameInputBlur = () => {
+    setRenameComponent(null);
+  };
+
+  const renameComponentHandler = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      renameTreeNode(e.currentTarget.value, data.id);
+      setRenameComponent(null);
+    }
+  }
+
   if (data.isFolder) {
     return (
       <div>
@@ -36,10 +56,32 @@ const Folder = ({ data, updateTree }: { data: FolderProps; updateTree: (newNodeD
           style={{ cursor: "pointer", fontWeight: "bold" }}
           onClick={() => setExpanded((prev) => !prev)}
         >
-          📁 {data.name}
+          {
+           renameComponent ? (
+            <span style={{display: 'block', paddingLeft: "20px"}}>
+              <input 
+              name="rename_component" 
+              type="text" 
+              placeholder="Enter name" 
+              autoFocus={true} 
+              onBlur={handleRenameInputBlur}
+              onKeyDown={renameComponentHandler}
+              />  
+            </span>
+          ) : (
+            <span>📁 {data.name}</span>
+          )
+        }
         </span>
-        <Button text="Folder +" onClick={showNewComponent} type={1}/>
-        <Button text="File +" onClick={showNewComponent} type={2}/>
+        {renameComponent === null && (
+          <>
+            <Button text="Folder +" onClick={showNewComponent} type={1}/>
+            <Button text="File +" onClick={showNewComponent} type={2}/>
+            <Button text="Rename" onClick={showNewComponent} type={data.id} />
+            {/* Delete basically deletes the node itself along with it's child */}
+            <Button text="Delete" onClick={showNewComponent} type={data.id} />
+          </>
+        )}
         
         {
           addNewComponent && (
@@ -59,14 +101,19 @@ const Folder = ({ data, updateTree }: { data: FolderProps; updateTree: (newNodeD
         {expanded && (
           <div style={{ paddingLeft: "20px" }}>
             {data.items?.map((exp) => (
-              <Folder key={exp.id} data={exp} updateTree={updateTree} />
+              <Folder key={exp.id} data={exp} updateTree={updateTree} renameTreeNode={renameTreeNode} />
             ))}
           </div>
         )}
       </div>
     );
   } else {
-    return <div>📄 {data.name}</div>;
+    return <div>
+      📄 {data.name}
+        <Button text="Rename" onClick={showNewComponent} type={data.id} />
+        {/* Delete basically deletes the node itself along with it's child */}
+        <Button text="Delete" onClick={showNewComponent} type={data.id} />
+    </div>;
   }
 };
 
